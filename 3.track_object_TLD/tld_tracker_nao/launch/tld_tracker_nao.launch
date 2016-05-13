@@ -1,0 +1,13 @@
+<launch>
+
+  <!-- Begin nao robot launcher-->
+  <include file="$(find tld_tracker_nao)/launch/nao_bringup_rapp.launch" >
+    <arg name="nao_ip" value="192.168.0.100"/>  
+  </include>
+
+  <!-- Begin TLD tracker -->
+  <include file="$(find pandora_tld)/launch/predator_node_standalone.launch" />
+
+  <!-- Begin our application -->
+  <node name="nao_tld_tracker_node" type="tracker.py" pkg="tld_tracker_nao" output="screen" />
+</launch>
