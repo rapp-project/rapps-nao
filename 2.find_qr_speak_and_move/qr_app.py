@@ -4,12 +4,15 @@ import time, threading
 # Import the RAPP Robot API
 from rapp_robot_api import RappRobot
 # Import the QR detection module
-from RappCloud import QrDetection
+from RappCloud.CloudMsgs import QrDetection
+from RappCloud import RappPlatformService
 
 # Create an object in order to call the desired functions
-rh = RappRobot()
+rh = RappRobot('192.168.0.100', 9559)
 # Instantiate a new FaceDetection service.
-qrDetector = QrDetection(image='')
+msg = QrDetection()
+
+svc = RappPlatformService()
 
 # Enable the NAO motors for the head to move
 rh.motion.enableMotors()
@@ -21,14 +24,12 @@ def callback():
     # Get the photo to the PC
     rh.utilities.moveFileToPC("/home/nao/qr.jpg", "/home/manos/rapp_nao/qr.jpg")
     # Check if QRs exist
-    qrDetector.image = "/home/manos/rapp_nao/qr.jpg"
-    res = qrDetector.call()
+    msg.req.imageFilepath = "/home/manos/rapp_nao/qr.jpg"
+    res = svc.call(msg)
     print "Call to platform finished"
 
     if len(res.qr_centers) == 0: # No QR codes were detected
         print "No QR codes were detected"
-        threading.Timer(0, callback).start()
-        return
     else: # One or more QR codes detected
         print "QR code detected"
         qr_center = res.qr_centers[0]
@@ -40,16 +41,25 @@ def callback():
         angle_x = -dir_x * 30.0 / 180.0 * 3.1415
         angle_y = dir_y * 23.7 / 180.0 * 3.1415
 
+        # Get NAO head angles
+        [ans, err] = rh.humanoid_motion.getJointAngles(["HeadYaw", "HeadPitch"]) 
+
         # Set NAO angles according to the QR center
         rh.humanoid_motion.setJointAngles(["HeadYaw", "HeadPitch"], \
-                [angle_x, angle_y], 0.1)
+                [angle_x + ans[0], angle_y + ans[1]], 0.1)
 
-        rh.audio.speak(qr_message)
+        if callback.qr_found == False:
+            rh.audio.speak("I found a QR with message: " + qr_message)
+            rh.audio.speak("I will track it")
+            callback.qr_found = True
 
         # Capture an image from the NAO cameras
         rh.vision.capturePhoto("/home/nao/qr.jpg", "front", "640x480")
         # Get the photo to the PC
         rh.utilities.moveFileToPC("/home/nao/qr.jpg", "/home/manos/rapp_nao/qr.jpg")
+    
+    threading.Timer(0, callback).start()
 
 
+callback.qr_found = False
 callback()
