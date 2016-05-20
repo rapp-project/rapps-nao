@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-# Author: Chrisa Gouniotou (https://github.com/chrisagou)
-
 # Import the RAPP Robot API
 from rapp_robot_api import RappRobot
 
