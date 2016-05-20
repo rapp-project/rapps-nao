@@ -3,6 +3,7 @@
 # Authors: 
 #   Chrisa Gouniotou (https://github.com/chrisagou)
 #   Aspa Karanasiou (https://github.com/aspa1)
+#   Manos Tsardoulias (https://github.com/etsardou)
 
 # Import the RAPP Robot API
 from rapp_robot_api import RappRobot
