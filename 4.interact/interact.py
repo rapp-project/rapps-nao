@@ -4,6 +4,7 @@ import time
 import threading
 import math
 import string
+from os.path import expanduser
 
 # Import the RAPP Robot API
 from rapp_robot_api import RappRobot
@@ -49,7 +50,7 @@ def pointToDirection(rh, angles):
             0.2)
 
 # Create an object in order to call the desired functions
-rh = RappRobot('192.168.0.100', 9559)
+rh = RappRobot()
 # Instantiate new vision services.
 qr_msg = QrDetection()
 face_msg = FaceDetection()
@@ -58,6 +59,8 @@ onto_msg = OntologySuperclasses()
 
 # Service caller initialization
 svc = RappPlatformService()
+
+home = expanduser("~") + '/Pictures/'
 
 rh.audio.speak('I will scan for objects')
 
@@ -92,12 +95,12 @@ for i in range(0, 3):
         rh.vision.capturePhoto("/home/nao/" + image_name, "front", "640x480")
         # Get the photo to the PC
         rh.utilities.moveFileToPC("/home/nao/" + image_name, \
-                "/home/manos/rapp_nao/" + image_name)
+            home + image_name)
         
         # Check if objects exist
-        qr_msg.req.imageFilepath = "/home/manos/rapp_nao/" + image_name
-        face_msg.req.imageFilepath = "/home/manos/rapp_nao/" + image_name
-        obj_msg.req.imageFilepath = "/home/manos/rapp_nao/" + image_name
+        qr_msg.req.imageFilepath = home + image_name
+        face_msg.req.imageFilepath = home + image_name
+        obj_msg.req.imageFilepath = home + image_name
         
         # Get the responses
         qr_resp = svc.call(qr_msg)
@@ -214,7 +217,7 @@ for key in objects:
     rh.vision.capturePhoto("/home/nao/" + image_name, "front", "640x480")
     # Get the photo to the PC
     rh.utilities.moveFileToPC("/home/nao/" + image_name, \
-            "/home/manos/rapp_nao/" + image_name)
+            home + image_name)
 
 # Finally, NAo returns to Sit position and shuts the motors down
 rh.humanoid_motion.goToPosture("Sit", 0.5)
