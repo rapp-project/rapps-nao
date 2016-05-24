@@ -2,7 +2,7 @@
 
   <!-- Begin nao robot launcher-->
   <include file="$(find tld_tracker_nao)/launch/nao_bringup_rapp.launch" >
-    <arg name="nao_ip" value="192.168.0.100"/>  
+    <arg name="nao_ip" value="192.168.0.242"/>  
   </include>
 
   <!-- Begin TLD tracker -->

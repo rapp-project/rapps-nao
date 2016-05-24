@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import time, threading
+from os.path import expanduser
 # Import the RAPP Robot API
 from rapp_robot_api import RappRobot
 # Import the QR detection module
@@ -8,7 +9,7 @@ from RappCloud.CloudMsgs import QrDetection
 from RappCloud import RappPlatformService
 
 # Create an object in order to call the desired functions
-rh = RappRobot('192.168.0.100', 9559)
+rh = RappRobot()
 # Instantiate a new FaceDetection service.
 msg = QrDetection()
 
@@ -22,9 +23,9 @@ def callback():
     # Capture an image from the NAO cameras
     rh.vision.capturePhoto("/home/nao/qr.jpg", "front", "640x480")
     # Get the photo to the PC
-    rh.utilities.moveFileToPC("/home/nao/qr.jpg", "/home/manos/rapp_nao/qr.jpg")
+    rh.utilities.moveFileToPC("/home/nao/qr.jpg", expanduser("~") + "/Pictures/qr.jpg")
     # Check if QRs exist
-    msg.req.imageFilepath = "/home/manos/rapp_nao/qr.jpg"
+    msg.req.imageFilepath = expanduser("~") + "/Pictures/qr.jpg"
     res = svc.call(msg)
     print "Call to platform finished"
 
@@ -56,7 +57,7 @@ def callback():
         # Capture an image from the NAO cameras
         rh.vision.capturePhoto("/home/nao/qr.jpg", "front", "640x480")
         # Get the photo to the PC
-        rh.utilities.moveFileToPC("/home/nao/qr.jpg", "/home/manos/rapp_nao/qr.jpg")
+        rh.utilities.moveFileToPC("/home/nao/qr.jpg", expanduser("~") + "/Pictures/qr.jpg")
     
     threading.Timer(0, callback).start()
 
