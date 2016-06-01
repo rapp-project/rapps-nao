@@ -43,11 +43,12 @@ def callback():
         angle_y = dir_y * 23.7 / 180.0 * 3.1415
 
         # Get NAO head angles
-        [ans, err] = rh.humanoid_motion.getJointAngles(["HeadYaw", "HeadPitch"]) 
-
+        ans = rh.humanoid_motion.getJointAngles(["HeadYaw", "HeadPitch"]) 
+        angles = ans['angles']
+        
         # Set NAO angles according to the QR center
         rh.humanoid_motion.setJointAngles(["HeadYaw", "HeadPitch"], \
-                [angle_x + ans[0], angle_y + ans[1]], 0.1)
+                [angle_x + angles[0], angle_y + angles[1]], 0.1)
 
         if callback.qr_found == False:
             rh.audio.speak("I found a QR with message: " + qr_message)
