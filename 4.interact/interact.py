@@ -8,14 +8,8 @@ from os.path import expanduser
 
 # Import the RAPP Robot API
 from rapp_robot_api import RappRobot
-# Import the vision modules
-from RappCloud.CloudMsgs import QrDetection
-from RappCloud.CloudMsgs import FaceDetection
-from RappCloud.CloudMsgs import ObjectRecognitionCaffe
-from RappCloud.CloudMsgs import OntologySuperclasses
-
-# Import the RAPP Platform Service invoker
-from RappCloud import RappPlatformService
+# Import the RAPP Platform API
+from RappCloud import RappPlatformAPI
 
 # Transforms a point in an image frame to rads. x_fov and y_fov are in degrees
 def pointToRads(x, y, x_pixels, y_pixels, x_fov, y_fov):
@@ -51,14 +45,7 @@ def pointToDirection(rh, angles):
 
 # Create an object in order to call the desired functions
 rh = RappRobot()
-# Instantiate new vision services.
-qr_msg = QrDetection()
-face_msg = FaceDetection()
-obj_msg = ObjectRecognitionCaffe()
-onto_msg = OntologySuperclasses()
-
-# Service caller initialization
-svc = RappPlatformService()
+ch = RappPlatformAPI()
 
 home = expanduser("~") + '/Pictures/'
 
@@ -97,29 +84,26 @@ for i in range(0, 3):
         rh.utilities.moveFileToPC("/home/nao/" + image_name, \
             home + image_name)
         
-        # Check if objects exist
-        qr_msg.req.imageFilepath = home + image_name
-        face_msg.req.imageFilepath = home + image_name
-        obj_msg.req.imageFilepath = home + image_name
+        imageFilepath = home + image_name
         
         # Get the responses
-        qr_resp = svc.call(qr_msg)
-        face_resp = svc.call(face_msg)
-        obj_resp = svc.call(obj_msg)
+        qr_resp = ch.qrDetection(imageFilepath)
+        face_resp = ch.faceDetection(imageFilepath, False)
+        obj_resp = ch.objectRecognitionCaffe(imageFilepath)
 
         # Prints for debugging purposes
-        print str(global_counter) + ": " + str(qr_resp.serialize())
-        print str(global_counter) + ": " + str(face_resp.serialize())
-        print str(global_counter) + ": " + str(obj_resp.serialize())
+        print str(global_counter) + ": " + str(qr_resp)
+        print str(global_counter) + ": " + str(face_resp)
+        print str(global_counter) + ": " + str(obj_resp)
         print "\n"
 
         # Store the objects and the respective head angles
         # Store the unique QR codes
-        if len(qr_resp.qr_centers) != 0:
+        if len(qr_resp['qr_centers']) != 0:
             # Transform Image-frame angles to NAO-frame
             obj_frame_ang = pointToRads(
-                    qr_resp.qr_centers[0]['x'],
-                    qr_resp.qr_centers[0]['y'],
+                    qr_resp['qr_centers'][0]['x'],
+                    qr_resp['qr_centers'][0]['y'],
                     640.0,
                     480.0,
                     60.97,
@@ -131,15 +115,15 @@ for i in range(0, 3):
                     ]
 
             # Store the QR if it has not been stored again
-            if qr_resp.qr_messages[0] not in qr_messages:
-                objects["qr " + qr_resp.qr_messages[0]] = obj_ang
+            if qr_resp['qr_messages'][0] not in qr_messages:
+                objects["qr " + qr_resp['qr_messages'][0]] = obj_ang
 
         # Store the unique faces based on location
-        if len(face_resp.faces) != 0:
-            f_x = (face_resp.faces[0]['up_left_point']['x'] + \
-                    face_resp.faces[0]['down_right_point']['x']) / 2.0
-            f_y = (face_resp.faces[0]['up_left_point']['y'] + \
-                    face_resp.faces[0]['down_right_point']['y']) / 2.0
+        if len(face_resp['faces']) != 0:
+            f_x = (face_resp['faces'][0]['up_left_point']['x'] + \
+                    face_resp['faces'][0]['down_right_point']['x']) / 2.0
+            f_y = (face_resp['faces'][0]['up_left_point']['y'] + \
+                    face_resp['faces'][0]['down_right_point']['y']) / 2.0
 
             # Transform the Image-angles to NAO-angles
             obj_frame_ang = pointToRads(
@@ -166,10 +150,10 @@ for i in range(0, 3):
                 objects["face " + str(global_counter)] = obj_ang
 
         # Insert objects detected by Caffe
-        if obj_resp.object_class != "":
+        if obj_resp['object_class'] != "":
 
             # Check if the detected objects are really there
-            detected_objects = string.split(obj_resp.object_class, ',')
+            detected_objects = string.split(obj_resp['object_class'], ',')
             rh.audio.speak("The objects I saw are.")
 
             for o in detected_objects:
