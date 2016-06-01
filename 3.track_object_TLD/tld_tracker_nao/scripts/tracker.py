@@ -75,15 +75,15 @@ class NaoTldTracker:
         joint.joint_angles.append(-var_x * 0.05)
         joint.joint_angles.append(var_y * 0.05)
 
-        [ans, err] = self.rh.humanoid_motion.getJointAngles(['HeadYaw', 'HeadPitch'])
-        head_pitch = ans[1]
-        head_yaw = ans[0]
+        ans = self.rh.humanoid_motion.getJointAngles(['HeadYaw', 'HeadPitch'])
+        head_pitch = ans['angles'][1]
+        head_yaw = ans['angles'][0]
 
         # Get the sonar measurements
-        sonars = self.rh.sensors.getSonarsMeasurements()[0]
+        sonars = self.rh.sensors.getSonarsMeasurements()
 
         # Check if NAO is close to an obstacle
-        if sonars['front_left'] <= 0.3 or sonars['front_right'] <= 0.3:
+        if sonars['sonars']['front_left'] <= 0.3 or sonars['sonars']['front_right'] <= 0.3:
             self.lock_motion = True
             rospy.loginfo("Locked due to sonars")
         # Check if NAOs head looks way too down or up
@@ -104,8 +104,8 @@ class NaoTldTracker:
             self.joint_pub.publish(joint)
 
         # Check the battery levels
-        [batt, none] = self.rh.sensors.getBatteryLevels()
-        battery = batt[0]
+        batt = self.rh.sensors.getBatteryLevels()
+        battery = batt['levels'][0]
         if battery < 25:
             self.rh.audio.setVolume(100)
             self.rh.audio.speak("My battery is low")
