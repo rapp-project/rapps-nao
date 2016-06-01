@@ -176,8 +176,8 @@ for i in range(0, 3):
                 rh.audio.speak(o)
             rh.audio.speak("Does any of them exist?")
 
-            [ans, err] = rh.audio.speechDetection(['yes', 'no'], 3, 'English')
-            if ans != None and ans[0] == 'yes':
+            ans = rh.audio.speechDetection(['yes', 'no'], 3, 'English')
+            if ans['error'] == None and ans['word'] == 'yes':
                 # If they exist store them, having as angles the head angles
                 objects["caffe_" + str(detected_objects[0]) + "_" + str(global_counter)] =\
                     [head_angles[0], head_angles[1]]
