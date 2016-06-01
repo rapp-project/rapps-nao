@@ -2,18 +2,15 @@
 
 import time, threading
 from os.path import expanduser
+
 # Import the RAPP Robot API
 from rapp_robot_api import RappRobot
-# Import the QR detection module
-from RappCloud.CloudMsgs import QrDetection
-from RappCloud import RappPlatformService
+# Import the RAPP Platform API
+from RappCloud import RappPlatformAPI
 
 # Create an object in order to call the desired functions
 rh = RappRobot()
-# Instantiate a new FaceDetection service.
-msg = QrDetection()
-
-svc = RappPlatformService()
+ch = RappPlatformAPI()
 
 # Enable the NAO motors for the head to move
 rh.motion.enableMotors()
@@ -25,16 +22,16 @@ def callback():
     # Get the photo to the PC
     rh.utilities.moveFileToPC("/home/nao/qr.jpg", expanduser("~") + "/Pictures/qr.jpg")
     # Check if QRs exist
-    msg.req.imageFilepath = expanduser("~") + "/Pictures/qr.jpg"
-    res = svc.call(msg)
+    imageFilepath = expanduser("~") + "/Pictures/qr.jpg"
+    res = ch.qrDetection(imageFilepath)
     print "Call to platform finished"
 
-    if len(res.qr_centers) == 0: # No QR codes were detected
+    if len(res['qr_centers']) == 0: # No QR codes were detected
         print "No QR codes were detected"
     else: # One or more QR codes detected
         print "QR code detected"
-        qr_center = res.qr_centers[0]
-        qr_message = res.qr_messages[0]
+        qr_center = res['qr_centers'][0]
+        qr_message = res['qr_messages'][0]
 
         # Directions are computed bounded in [-1,1]
         dir_x = (qr_center['x'] - (640.0/2.0)) / (640.0 / 2.0)
