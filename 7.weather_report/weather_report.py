@@ -9,9 +9,7 @@ __version__ = "Alpha"
 from rapp_robot_api import RappRobot
 from RappCloud import RappPlatformAPI
 from RappCloud.Utils import Net
-import time
 import sys
-from os import path
 from datetime import datetime
 
 dateMap = {
@@ -61,7 +59,11 @@ class WeatherReport(object):
         try:
             self.rh.motion.enableMotors()
             self.rh.humanoid_motion.goToPosture('Sit', 0.5)
-            self.intro()
+            mode = self._mode_selection()
+            if mode == 'current':
+                self._mode_current()
+            elif mode == 'forecast':
+                self._mode_forecast()
             self.say(u'Τερματισμός εφαρμογής')
             self.rh.humanoid_motion.goToPosture('Sit', 0.5)
             self.rh.motion.disableMotors()
@@ -69,10 +71,9 @@ class WeatherReport(object):
             print e
             self.error_termination()
 
-    def intro(self):
-        # msg = u'Καλησπέρα. Μπορείς να επιλέξεις μεταξύ'
-        # msg += u' της σημερινής και της εβδομαδιαίας πρόβλεψης του καιρού. '
-        msg = ''
+    def _mode_selection(self):
+        msg = u'Μπορείς να επιλέξεις μεταξύ'
+        msg += u' της σημερινής και της εβδομαδιαίας πρόβλεψης του καιρού. '
         msg += u'Πείτε ένα για επιλογή της σημερινής πρόβλεψης'
         msg += u', ή δύο για την εβδομαδιαία.'
         self.say(msg)
@@ -101,51 +102,52 @@ class WeatherReport(object):
                 break
         if resp['word'].decode('utf8').lower() in [u'σημερινη', u'σημερινή',
                                                    u'ένα', u'ενα']:
-            resp = self.ch.weatherReportCurrent(self._loc['city'], metric=1)
-            if len(resp['error']) != 0:
-                self.error_termination()
-            self._pronounce_current_weather(resp)
+            return 'current'
         elif resp['word'].decode('utf8').lower() in [u'εβδομαδιαία',
                                                      u'εβδομαδιαια', u'δύο',
                                                      u'δυο']:
-            resp = self.ch.weatherReportForecast(self._loc['city'], metric=1)
-            print resp
-            print len(resp['error'])
-            if len(resp['error']) != 0:
-                self.error_termination()
-            self._pronounce_forecast(resp['forecast'])
+            return 'forecast'
 
-    def _pronounce_current_weather(self, report):
+    def _mode_current(self):
+        report = self.ch.weatherReportCurrent(self._loc['city'], metric=1)
+        if len(report['error']) != 0:
+            self.error_termination()
         print "[*] Current Weather Report: {0}".format(report)
         date = self._timestamp_to_date(int(report['date']))
         self.say('Η πρόβλεψη του καιρού για τις {0} {1}, ώρα {2}, είναι:'.format(
             date['day'], date['month'].encode('utf8'), date['hour']))
         self.say(u'Θερμοκρασία: {0} βαθμούς κελσίου'.format(
-            int(float(report['temperature']))))
+            report['temperature'].encode('utf8').replace(u'.', u' κόμμα ')))
         if report['wind_speed'] != u'':
             self.say(u'Ταχύτητα ανέμου: {0} {1}'.format(
-                int(float(report['wind_speed'])), u'χιλιόμετρα το δευτερόλεπτο'))
+                report['wind_speed'].encode('utf8').replace(
+                    u'.', u' κόμμα '), u'χιλιόμετρα το δευτερόλεπτο'))
         if report['visibility'] != u'':
-            self.say(u'Ορατότητα: {0} {1}'.format(
-                report['visibility'], u''))
+            self.say(u'Ορατότητα: Μέχρι τα {0} {1}'.format(
+                report['visibility'].encode('utf8').replace(u'.', u' κόμμα '),
+                u'χιλιόμετρα'))
         if report['humidity'] != u'':
             self.say(u'Επίπεδα υγρασίας : {0} {1}'.format(
                 int(float(report['humidity']) * 100), u'τοις εκατό'))
         if report['pressure'] != u'':
             self.say(u'Ατμοσφερική πίεση: {0} {1}'.format(
-                int(float(report['pressure'])), u'πασκάλ'))
+                report['pressure'].encode('utf8').replace(u'.', u' κόμμα '),
+                u'πασκάλ'))
 
-    def _pronounce_forecast(self, reports):
-        reports = sorted(reports, key=lambda k: k['date'])
+    def _mode_forecast(self):
+        resp = self.ch.weatherReportForecast(self._loc['city'], metric=1)
+        if len(resp['error']) != 0:
+            self.error_termination()
+        reports = sorted(resp['forecast'], key=lambda k: k['date'])
         for idx, val in enumerate(reports):
             print "[*] Forecast Report: {0}".format(val)
             date = self._timestamp_to_date(int(val['date']))
             self.say('Η πρόβλεψη του καιρού για τις {0} {1}, είναι:'.format(
                 date['day'], date['month'].encode('utf8')))
             self.say(u'Υψηλότερη θερμοκρασία: {0} βαθμούς κελσίου'.format(
-                int(float(val['high_temp']))))
+                val['high_temp'].encode('utf8').replace(u'.', u' κόμμα ')))
             self.say(u'Χαμηλότερη θερμοκρασία: {0} βαθμούς κελσίου'.format(
-                int(float(val['low_temp']))))
+                val['low_temp'].encode('utf8').replace(u'.', u' κόμμα ')))
 
     def _timestamp_to_date(self, ts):
         d = datetime.fromtimestamp(ts).strftime('%d, %B, %H:%M:%S').split(',')
